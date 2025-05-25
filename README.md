@@ -1,45 +1,35 @@
-<h1>React-Laravel-Inertia-Shadcdn</h1>
+# 📄 Resume AI Builder
 
-<h2>Prerequisites</h2>
-<p>Ensure you have the following installed on your system:</p>
-<ul>
-  <li><a href="https://getcomposer.org/" target="_blank">Composer</a></li>
-  <li><a href="https://www.php.net/" target="_blank">PHP</a></li>
-  <li><a href="https://nodejs.org/" target="_blank">Node.js & npm</a></li>
-</ul>
+**Resume AI Builder** is an intelligent resume creation platform that helps users generate professional, well-written, and ATS-friendly resumes using AI. The system takes user-inputted career information, enhances it using Google's Gemini API, and outputs a downloadable, beautifully formatted PDF resume.
 
-<h2>Installation Steps</h2>
+---
 
-<ol>
-  <li><strong>Install PHP dependencies:</strong>
-    <pre><code>composer install</code></pre>
-  </li>
-  
-  <li><strong>Copy the environment configuration file:</strong>
-    <pre><code>cp .env.example .env</code></pre>
-  </li>
-  
-  <li><strong>Generate the application key:</strong>
-    <pre><code>php artisan key:generate</code></pre>
-  </li>
-  
-  <li><strong>Install Node.js dependencies:</strong>
-    <pre><code>npm install</code></pre>
-  </li>
-  
-  <li><strong>Run database migrations:</strong>
-    <pre><code>php artisan migrate</code></pre>
-  </li>
-  
-  <li><strong>Build frontend assets:</strong>
-    <pre><code>npm run dev</code></pre>
-  </li>
-  
-  <li><strong>Start the development server:</strong>
-    <pre><code>php artisan serve</code></pre>
-  </li>
-</ol>
+## 🚀 Features
 
-<p>Your application should now be running. Open your browser and navigate to <code>http://127.0.0.1:8000/</code> to access it.</p>
+- ✍️ Easy-to-use form interface for entering resume details
+- 🤖 AI-enhanced content via Gemini API for improved wording and clarity
+- 📄 Auto-generated resume in professional PDF format
+- 🧠 Smart formatting with pre-designed resume templates
+- 💾 One-click PDF download functionality
 
-cd /home/doublebi/public_html/laravel/
+---
+
+## 🧩 Tech Stack
+
+- **Frontend:** React / Next.js (TypeScript)
+- **AI Processing:** Gemini Pro API
+- **PDF Generation:** `pdf-lib` or `react-pdf` (templated)
+- **Backend/API:** Node.js (API routes in Next.js)
+
+---
+
+## 🔁 Application Flow
+
+1. **User Input:** Users fill out a form in `dashboard.tsx`.
+2. **Data Transfer:** Form data is passed to `userDashboard.tsx` for review or preview.
+3. **AI Enhancement:** Data is sent to Gemini API to enhance and optimize resume content.
+4. **Content Handling:** The improved content is received and formatted.
+5. **PDF Generation:** The final version is used to create a styled PDF using a predefined template.
+6. **Download:** The PDF is served back to the user for download.
+
+---
