@@ -13,26 +13,86 @@
         }
 
         <?php
-        $totalContent = strlen(json_encode($optimizedData));
-        $baseSize = 12;
-        if ($totalContent < 1000) {
-            $fontSize = 13;
-            $nameSize = 22;
-            $sectionSize = 13;
-        } elseif ($totalContent < 2000) {
+        // Count actual content lines and fields
+        $contentLines = 0;
+        foreach ($optimizedData['education'] as $edu) {
+            if (!empty($edu['schoolName'])) {
+                $contentLines += 3;
+            }
+        }
+        foreach ($optimizedData['experiences'] as $exp) {
+            if (!empty($exp['companyName'])) {
+                $contentLines += 3;
+            }
+        }
+        if (!empty($optimizedData['formData']['summaryOfQualification'])) {
+            $contentLines += substr_count($optimizedData['formData']['summaryOfQualification'], "\n") + 2;
+        }
+        if (!empty($optimizedData['formData']['technicalSkills'])) {
+            $contentLines += substr_count($optimizedData['formData']['technicalSkills'], "\n") + 2;
+        }
+        if (!empty($optimizedData['formData']['honorAndActivities'])) {
+            $contentLines += substr_count($optimizedData['formData']['honorAndActivities'], "\n") + 2;
+        }
+        
+        if ($contentLines <= 15) {
+            $fontSize = 16;
+            $nameSize = 28;
+            $sectionSize = 16;
+        } elseif ($contentLines <= 25) {
+            $fontSize = 14;
+            $nameSize = 24;
+            $sectionSize = 14;
+        } elseif ($contentLines <= 35) {
             $fontSize = 12;
             $nameSize = 20;
             $sectionSize = 12;
-        } elseif ($totalContent < 3000) {
-            $fontSize = 11;
-            $nameSize = 18;
-            $sectionSize = 11;
         } else {
             $fontSize = 10;
             $nameSize = 16;
             $sectionSize = 10;
         }
-        ?> body {
+        ?><?php
+        // Count actual content lines and fields
+        $contentLines = 0;
+        foreach ($optimizedData['education'] as $edu) {
+            if (!empty($edu['schoolName'])) {
+                $contentLines += 3;
+            }
+        }
+        foreach ($optimizedData['experiences'] as $exp) {
+            if (!empty($exp['companyName'])) {
+                $contentLines += 3;
+            }
+        }
+        if (!empty($optimizedData['formData']['summaryOfQualification'])) {
+            $contentLines += substr_count($optimizedData['formData']['summaryOfQualification'], "\n") + 2;
+        }
+        if (!empty($optimizedData['formData']['technicalSkills'])) {
+            $contentLines += substr_count($optimizedData['formData']['technicalSkills'], "\n") + 2;
+        }
+        if (!empty($optimizedData['formData']['honorAndActivities'])) {
+            $contentLines += substr_count($optimizedData['formData']['honorAndActivities'], "\n") + 2;
+        }
+        
+        if ($contentLines <= 15) {
+            $fontSize = 16;
+            $nameSize = 28;
+            $sectionSize = 16;
+        } elseif ($contentLines <= 25) {
+            $fontSize = 14;
+            $nameSize = 24;
+            $sectionSize = 14;
+        } elseif ($contentLines <= 35) {
+            $fontSize = 12;
+            $nameSize = 20;
+            $sectionSize = 12;
+        } else {
+            $fontSize = 10;
+            $nameSize = 16;
+            $sectionSize = 10;
+        }
+        ?>body {
             font-family: 'Arial', sans-serif;
             line-height: 1.1;
             color: #333;
@@ -103,15 +163,6 @@
             font-size: {{ $fontSize - 1 }}px;
         }
 
-        .location-date {
-            text-align: right;
-            font-size: {{ $fontSize - 1 }}px;
-            color: #333;
-            margin-top: -15px;
-            margin-bottom: 3px;
-            font-weight: 600;
-        }
-
         .details {
             margin-left: 0;
             margin-top: 3px;
@@ -163,70 +214,6 @@
     </style>
 </head>
 
-<body>
-    <div class="resume">
-        <div class="header">
-            <div class="name">{{ $optimizedData['formData']['name'] }}</div>
-            <div class="contact-info">
-                {{ $optimizedData['formData']['address'] }} –
-                @if ($optimizedData['formData']['github'])
-                    {{ $optimizedData['formData']['github'] }} –
-                @endif
-                @if ($optimizedData['formData']['linkedin'])
-                    {{ $optimizedData['formData']['linkedin'] }}
-                @endif
-            </div>
-        </div>
-
-        @if ($optimizedData['formData']['summaryOfQualification'])
-            <div class="section">
-                <div class="section-title">Summary of Qualifications</div>
-                <div>{!! nl2br($optimizedData['formData']['summaryOfQualification']) !!}</div>
-            </div>
-        @endif
-
-        <div class="section">
-            <div class="section-title">Education</div>
-            @foreach ($optimizedData['education'] as $edu)
-                @if ($edu['schoolName'])
-                    <div class="education-item">
-                        <div class="institution">{{ $edu['schoolName'] }}</div>
-                        <div class="location-date">{{ $edu['schoolYear'] }}</div>
-                        <div class="degree">{{ $edu['level'] }}
-                            {{ $edu['achievement'] ? '- ' . $edu['achievement'] : '' }}</div>
-                    </div>
-                @endif
-            @endforeach
-        </div>
-
-        @if ($optimizedData['formData']['technicalSkills'])
-            <div class="section">
-                <div class="section-title">Technical Skills</div>
-                <div>{!! nl2br($optimizedData['formData']['technicalSkills']) !!}</div>
-            </div>
-        @endif
-
-        <div class="section">
-            <div class="section-title">Experience</div>
-            @foreach ($optimizedData['experiences'] as $exp)
-                @if ($exp['companyName'])
-                    <div class="experience-item">
-                        <div class="company">{{ $exp['companyName'] }}</div>
-                        <div class="location-date">{{ $exp['year'] }}</div>
-                        <div class="position">{{ $exp['role'] }}</div>
-                    </div>
-                @endif
-            @endforeach
-        </div>
-
-        @if ($optimizedData['formData']['honorAndActivities'])
-            <div class="section">
-                <div class="section-title">Honors & Activities</div>
-                <div>{!! nl2br($optimizedData['formData']['honorAndActivities']) !!}</div>
-            </div>
-        @endif
-    </div>
-</body>
 
 <body>
     <div class="resume">
@@ -276,8 +263,12 @@
             @foreach ($optimizedData['experiences'] as $exp)
                 @if ($exp['companyName'])
                     <div class="experience-item">
-                        <div class="company">{{ $exp['companyName'] }}</div>
-                        <div class="location-date">{{ $exp['year'] }}</div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px;">
+                            <div class="company">{{ $exp['companyName'] }}</div>
+                            <div style="font-size: {{ $fontSize - 1 }}px; color: #333; font-weight: 600;">
+                                {{ $exp['year'] }}</div>
+                        </div>
                         <div class="position">{{ $exp['role'] }}</div>
                     </div>
                 @endif

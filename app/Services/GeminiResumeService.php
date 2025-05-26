@@ -61,33 +61,84 @@ class GeminiResumeService
 
   private function buildOptimizationPrompt($userData)
   {
-    $jobDescription = $userData['jobDescription'] ?? '';
+    $targetDescription = $userData['targetDescription'] ?? '';
+    $personalInfo = $userData['personalInfo'] ?? '';
+    $summaryOfQualifications = $userData['summaryOfQualifications'] ?? '';
+    $education = $userData['education'] ?? '';
+    $technicalSkills = $userData['technicalSkills'] ?? '';
+    $relatedExperience = $userData['relatedExperience'] ?? '';
+    $honorsAndActivities = $userData['honorsAndActivities'] ?? '';
 
-    return "You are an expert resume writer. Optimize this resume data for ATS systems and improve professional wording. " .
-      ($jobDescription ? "Tailor it specifically for this job posting: {$jobDescription}. " : "") .
-      "Return ONLY valid JSON with the exact same structure but with improved, professional content. " .
-      "Use strong action verbs, quantify achievements where possible, and include relevant keywords. " .
-      "Do not add any markdown formatting or code blocks - just return the raw JSON. " .
-      "Resume data: " . json_encode($userData);
+    return "You are an expert resume writer. Transform this raw resume data into a professional, ATS-friendly resume. 
+
+    CRITICAL INSTRUCTIONS:
+    - Parse and organize the comma-separated data properly
+    - All content must be in English only
+    - Use powerful action verbs and quantified achievements
+    - Return ONLY valid JSON with this exact structure:
+
+    {
+      \"formData\": {
+        \"name\": \"extracted name\",
+        \"address\": \"extracted address\", 
+        \"github\": \"extracted github\",
+        \"linkedin\": \"extracted linkedin\",
+        \"summaryOfQualification\": \"enhanced summary\",
+        \"technicalSkills\": \"organized technical skills\",
+        \"honorAndActivities\": \"enhanced honors and activities\"
+      },
+      \"education\": [
+        {
+          \"schoolName\": \"school name\",
+          \"level\": \"degree level\", 
+          \"achievement\": \"achievements\",
+          \"schoolYear\": \"year\"
+        }
+      ],
+      \"experiences\": [
+        {
+          \"companyName\": \"company\",
+          \"role\": \"position\",
+          \"year\": \"year\"
+        }
+      ]
+    }
+
+    RAW DATA TO PROCESS:
+    Target Description: {$targetDescription}
+    Personal Information: {$personalInfo}
+    Summary: {$summaryOfQualifications}
+    Education: {$education}
+    Technical Skills: {$technicalSkills}
+    Experience: {$relatedExperience}
+    Honors: {$honorsAndActivities}
+
+    Parse each field carefully and enhance the content professionally.";
   }
+
 
   public function calculateATSScore($optimizedData)
   {
-    // ATS scoring logic based on keywords, formatting, etc.
     $score = 0;
-
-    // Check for action verbs
-    $actionVerbs = ['managed', 'developed', 'implemented', 'improved', 'increased', 'decreased', 'created', 'designed', 'led', 'achieved'];
     $content = strtolower(json_encode($optimizedData));
+
+    // Enhanced action verbs for IT professionals
+    $actionVerbs = ['engineered', 'architected', 'developed', 'implemented', 'optimized', 'spearheaded', 'revolutionized', 'automated', 'streamlined', 'enhanced', 'delivered', 'managed', 'led', 'created', 'designed', 'built', 'deployed'];
     foreach ($actionVerbs as $verb) {
-      if (strpos($content, $verb) !== false) $score += 5;
+      if (strpos($content, $verb) !== false) $score += 4;
     }
 
-    // Check for quantifiable results
-    if (preg_match('/\d+%|\$\d+|\d+\+/', $content)) $score += 15;
+    // Check for quantifiable results (more comprehensive)
+    if (preg_match('/\d+%|\$\d+|\d+\+|\d+x|by \d+/', $content)) $score += 20;
 
-    // Check technical skills presence
-    if (!empty($optimizedData['formData']['technicalSkills'])) $score += 20;
+    // Technical skills presence
+    if (!empty($optimizedData['formData']['technicalSkills'])) $score += 25;
+
+    // Check for IT-specific keywords
+    $techKeywords = ['api', 'database', 'cloud', 'agile', 'scrum', 'ci/cd', 'microservices', 'devops', 'aws', 'azure', 'docker', 'kubernetes'];
+    foreach ($techKeywords as $keyword) {
+      if (strpos($content, $keyword) !== false) $score += 3;
+    }
 
     return min($score, 100);
   }

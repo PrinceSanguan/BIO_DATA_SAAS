@@ -1,92 +1,125 @@
-import { useState } from 'react';
-
-interface User {
-    name: string;
-    email: string;
-}
+import { Head } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 interface DashboardProps {
-    user: User;
+    user: {
+        name: string;
+        email: string;
+    };
 }
 
-interface Education {
-    level: string;
-    schoolName: string;
-    achievement: string;
-    schoolYear: string;
-}
-
-interface Experience {
-    companyName: string;
-    role: string;
-    year: string;
-}
-
-interface Template {
-    id: string;
-    name: string;
-    preview: string;
-}
-
-interface OptimizedData {
-    optimizedData: any;
-    formData: any;
-    education: Education[];
-    experiences: Experience[];
-    atsScore?: number;
-    suggestions?: string[];
-}
-
-export default function UserDashboard({ user }: DashboardProps) {
+export default function Dashboard({ user }: DashboardProps) {
+    const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
-        name: '',
-        address: '',
-        github: '',
-        linkedin: '',
-        summaryOfQualification: '',
+        targetDescription: '',
+        personalInformation: '',
+        summaryOfQualifications: '',
+        education: '',
         technicalSkills: '',
-        honorAndActivities: '',
+        relatedExperience: '',
+        honorsAndActivities: '',
     });
 
-    const [education, setEducation] = useState<Education[]>([
-        { level: 'Primary School', schoolName: '', achievement: '', schoolYear: '' },
-        { level: 'Secondary School', schoolName: '', achievement: '', schoolYear: '' },
-        { level: 'Tertiary School', schoolName: '', achievement: '', schoolYear: '' },
-        { level: 'Doctorate School', schoolName: '', achievement: '', schoolYear: '' },
-    ]);
-
-    const [experiences, setExperiences] = useState<Experience[]>([{ companyName: '', role: '', year: '' }]);
-
-    const [jobDescription, setJobDescription] = useState('');
-    const [selectedTemplate, setSelectedTemplate] = useState('it');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [previewData, setPreviewData] = useState<OptimizedData | null>(null);
-    const [showPreview, setShowPreview] = useState(false);
+    const [generatedResume, setGeneratedResume] = useState<any>(null);
+    const [atsScore, setAtsScore] = useState<number>(0);
+    const [showModal, setShowModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-    const templates: Template[] = [{ id: 'it', name: 'IT Professional', preview: '/images/templates/it-preview.jpg' }];
+    const steps = [
+        {
+            step: 1,
+            title: 'Target Description',
+            field: 'targetDescription',
+            placeholder: 'Enter job description or describe yourself (e.g., "I\'m good at programming")',
+            maxLength: 500,
+        },
+        {
+            step: 2,
+            title: 'Personal Information',
+            field: 'personalInformation',
+            placeholder: 'name, address, GitHub, LinkedIn',
+            maxLength: 300,
+        },
+        {
+            step: 3,
+            title: 'Summary of Qualifications',
+            field: 'summaryOfQualifications',
+            placeholder: 'Describe your key qualifications and strengths',
+            maxLength: 400,
+        },
+        {
+            step: 4,
+            title: 'Education',
+            field: 'education',
+            placeholder: 'Put your schools, achievements or degree, and school year',
+            maxLength: 400,
+        },
+        {
+            step: 5,
+            title: 'Technical Skills',
+            field: 'technicalSkills',
+            placeholder: 'List your technical skills and technologies',
+            maxLength: 300,
+        },
+        {
+            step: 6,
+            title: 'Related Experience',
+            field: 'relatedExperience',
+            placeholder: 'Put your company name, your role, what you did, and the year',
+            maxLength: 600,
+        },
+        {
+            step: 7,
+            title: 'Honors and Extracurricular Activities',
+            field: 'honorsAndActivities',
+            placeholder: 'List your honors, awards, and extracurricular activities',
+            maxLength: 400,
+        },
+    ];
 
     const handleInputChange = (field: string, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
     };
 
-    const handleEducationChange = (index: number, field: string, value: string) => {
-        setEducation((prev) => prev.map((edu, i) => (i === index ? { ...edu, [field]: value } : edu)));
+    useEffect(() => {
+        const hasSeenModal = localStorage.getItem('hasSeenWelcomeModal');
+        if (!hasSeenModal) {
+            setShowModal(true);
+        }
+    }, []);
+
+    const handleCloseModal = () => {
+        localStorage.setItem('hasSeenWelcomeModal', 'true');
+        setShowModal(false);
     };
 
-    const handleExperienceChange = (index: number, field: string, value: string) => {
-        setExperiences((prev) => prev.map((exp, i) => (i === index ? { ...exp, [field]: value } : exp)));
+    const handleNext = () => {
+        if (currentStep < 7) {
+            setCurrentStep(currentStep + 1);
+        }
     };
 
-    const addExperience = () => {
-        setExperiences((prev) => [...prev, { companyName: '', role: '', year: '' }]);
+    const handlePrevious = () => {
+        if (currentStep > 1) {
+            setCurrentStep(currentStep - 1);
+        }
     };
 
-    const removeExperience = (index: number) => {
-        setExperiences((prev) => prev.filter((_, i) => i !== index));
-    };
+    const handleGenerateResume = async () => {
+        // Check if all fields are filled
+        const allFieldsFilled = steps.every((step) => (formData[step.field as keyof typeof formData] || '').trim().length > 0);
 
-    const handleSubmit = async () => {
+        if (!allFieldsFilled) {
+            alert('Please fill all required fields before generating your resume.');
+            return;
+        }
+
         setIsGenerating(true);
+
         try {
             const response = await fetch('/dashboard/generate-resume', {
                 method: 'POST',
@@ -95,31 +128,35 @@ export default function UserDashboard({ user }: DashboardProps) {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
-                    formData,
-                    education,
-                    experiences,
-                    template: selectedTemplate,
-                    jobDescription,
+                    targetDescription: formData.targetDescription,
+                    personalInfo: formData.personalInformation,
+                    summaryOfQualifications: formData.summaryOfQualifications,
+                    education: formData.education,
+                    technicalSkills: formData.technicalSkills,
+                    relatedExperience: formData.relatedExperience,
+                    honorsAndActivities: formData.honorsAndActivities,
                 }),
             });
 
-            const result = await response.json();
-            if (result.success) {
-                setPreviewData(result);
-                setShowPreview(true);
+            const data = await response.json();
+
+            if (data.success) {
+                setGeneratedResume(data.optimizedData);
+                setAtsScore(data.atsScore);
+                setShowSuccessModal(true);
             } else {
-                alert('Failed to generate resume. Please try again.');
+                alert('Failed to generate resume: ' + data.error);
             }
         } catch (error) {
-            console.error('Generation failed:', error);
-            alert('An error occurred. Please try again.');
+            console.error('Error generating resume:', error);
+            alert('An error occurred while generating the resume');
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const downloadPDF = async () => {
-        if (!previewData) return;
+    const handleDownloadResume = async () => {
+        if (!generatedResume) return;
 
         try {
             const response = await fetch('/dashboard/download-resume', {
@@ -129,368 +166,330 @@ export default function UserDashboard({ user }: DashboardProps) {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
                 body: JSON.stringify({
-                    optimizedData: previewData.optimizedData,
-                    template: selectedTemplate,
+                    optimizedData: generatedResume,
+                    template: 'it',
                 }),
             });
 
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'ai-optimized-resume.pdf';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'resume.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                setShowSuccessModal(false);
+            } else {
+                alert('Failed to download resume');
+            }
         } catch (error) {
-            console.error('Download failed:', error);
-            alert('Failed to download resume. Please try again.');
+            console.error('Error downloading resume:', error);
+            alert('An error occurred while downloading the resume');
         }
     };
 
-    const editResume = () => {
-        setShowPreview(false);
-        setPreviewData(null);
-    };
-
-    if (showPreview && previewData) {
-        return (
-            <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-                {/* Top Navigation */}
-                <div className="bg-white shadow-sm dark:bg-gray-800">
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <div className="flex h-16 items-center justify-between">
-                            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Resume Preview</h1>
-                            <div className="flex space-x-4">
-                                <button
-                                    onClick={editResume}
-                                    className="rounded-md bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
-                                >
-                                    Edit Resume
-                                </button>
-                                <a href="/logout" className="rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
-                                    Logout
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <div className="mx-auto max-w-4xl space-y-6">
-                        {/* ATS Score Card */}
-                        <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ATS Compatibility Score</h2>
-                                    <p className="text-gray-600 dark:text-gray-400">How well your resume performs with Applicant Tracking Systems</p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-4xl font-bold text-green-600">{previewData.atsScore || 0}%</div>
-                                    <div className="text-sm text-gray-500">ATS Score</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Suggestions */}
-                        {previewData.suggestions && previewData.suggestions.length > 0 && (
-                            <div className="rounded-lg bg-blue-50 p-6 dark:bg-blue-900">
-                                <h3 className="mb-3 text-lg font-semibold text-blue-900 dark:text-blue-100">AI Suggestions</h3>
-                                <ul className="space-y-2">
-                                    {previewData.suggestions.map((suggestion, index) => (
-                                        <li key={index} className="flex items-start space-x-2 text-blue-800 dark:text-blue-200">
-                                            <span className="text-blue-600">•</span>
-                                            <span>{suggestion}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-
-                        {/* Download Section */}
-                        <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-                            <div className="text-center">
-                                <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">Your AI-Optimized Resume is Ready!</h2>
-                                <p className="mb-6 text-gray-600 dark:text-gray-400">
-                                    Your resume has been optimized using AI to improve ATS compatibility and professional language.
-                                </p>
-                                <button
-                                    onClick={downloadPDF}
-                                    className="transform rounded-lg bg-gradient-to-r from-green-600 to-blue-600 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:from-green-700 hover:to-blue-700"
-                                >
-                                    Download PDF Resume
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-            </div>
-        );
-    }
+    const getCurrentStepData = () => steps.find((step) => step.step === currentStep);
+    const currentStepData = getCurrentStepData();
+    const currentFieldValue = formData[currentStepData?.field as keyof typeof formData] || '';
+    const allFieldsFilled = steps.every((step) => (formData[step.field as keyof typeof formData] || '').trim().length > 0);
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-            {/* Top Navigation */}
-            <div className="bg-white shadow-sm dark:bg-gray-800">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 items-center justify-between">
-                        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Welcome, {user.name}</h1>
-                        <a href="/logout" className="rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
-                            Logout
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <>
+            <Head title="Dashboard - BIODATA" />
 
-            <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-4xl">
-                    <div className="mb-6 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-                        <div className="mb-8 text-center">
-                            <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-gray-100">AI Resume Builder</h1>
-                            <p className="text-gray-600 dark:text-gray-400">
-                                Fill out the information below and let our AI create your perfect resume with ATS optimization
-                            </p>
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-950 to-gray-900">
+                <div className="container mx-auto px-4 py-8">
+                    <div className="mb-8">
+                        <div className="mb-4 flex items-center justify-between">
+                            <div></div>
+                            <a href="/logout" className="rounded-lg bg-red-600 px-4 py-2 font-bold text-white transition-colors hover:bg-red-700">
+                                Logout
+                            </a>
                         </div>
+                        <div className="text-center">
+                            <h1 className="mb-2 text-4xl font-bold text-white">Welcome back, {user.name}!</h1>
+                            <p className="text-blue-300">Create your AI-powered resume in 7 simple steps</p>
+                        </div>
+                    </div>
 
-                        <form className="space-y-6">
-                            {/* Template Selection */}
-                            <div className="rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
-                                <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Choose Template</h2>
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                    {templates.map((template) => (
+                    <div className="mx-auto max-w-7xl">
+                        <div className="grid gap-8 lg:grid-cols-2">
+                            {/* Left Column - Form */}
+                            <div>
+                                {/* Progress Bar */}
+                                <div className="mb-8">
+                                    <div className="mb-2 flex justify-between text-sm text-blue-300">
+                                        <span>Step {currentStep} of 7</span>
+                                        <span>
+                                            {Math.round(
+                                                (steps.filter((step) => (formData[step.field as keyof typeof formData] || '').trim().length > 0)
+                                                    .length /
+                                                    7) *
+                                                    100,
+                                            )}
+                                            % Complete
+                                        </span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-gray-700">
                                         <div
-                                            key={template.id}
-                                            onClick={() => setSelectedTemplate(template.id)}
-                                            className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
-                                                selectedTemplate === template.id
-                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900'
-                                                    : 'border-gray-300 hover:border-gray-400'
-                                            }`}
-                                        >
-                                            <div className="mb-2 flex h-32 w-full items-center justify-center rounded bg-gray-200 dark:bg-gray-600">
-                                                <span className="text-sm text-gray-500 dark:text-gray-400">{template.name} Preview</span>
+                                            className="h-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300"
+                                            style={{
+                                                width: `${
+                                                    (steps.filter((step) => (formData[step.field as keyof typeof formData] || '').trim().length > 0)
+                                                        .length /
+                                                        7) *
+                                                    100
+                                                }%`,
+                                            }}
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                {/* Current Step Form */}
+                                {currentStepData && (
+                                    <div className="rounded-xl border border-blue-500/20 bg-gray-800/50 p-8 backdrop-blur-sm">
+                                        <div className="mb-6">
+                                            <h2 className="mb-2 text-2xl font-bold text-white">
+                                                {currentStep}. {currentStepData.title} <span className="text-red-400">*</span>
+                                            </h2>
+                                            <div className="flex justify-between text-sm">
+                                                <div className="text-red-400">Required field</div>
+                                                <div className="text-gray-400">
+                                                    Character limit: {currentFieldValue.length}/{currentStepData.maxLength}
+                                                </div>
                                             </div>
-                                            <p className="text-center font-medium text-gray-900 dark:text-gray-100">{template.name}</p>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
 
-                            {/* Job Description Field */}
-                            <div className="rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
-                                <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Target Job Description (Optional)</h2>
-                                <textarea
-                                    value={jobDescription}
-                                    onChange={(e) => setJobDescription(e.target.value)}
-                                    rows={4}
-                                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                    placeholder="Paste the job description you're applying for. AI will optimize your resume accordingly and improve keyword matching."
-                                />
-                            </div>
-
-                            {/* Personal Information */}
-                            <div className="rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
-                                <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Personal Information</h2>
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <div>
-                                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Name <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.name}
-                                            onChange={(e) => handleInputChange('name', e.target.value)}
-                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                            required
+                                        <textarea
+                                            value={currentFieldValue}
+                                            onChange={(e) => {
+                                                if (e.target.value.length <= currentStepData.maxLength) {
+                                                    handleInputChange(currentStepData.field, e.target.value);
+                                                }
+                                            }}
+                                            placeholder={currentStepData.placeholder}
+                                            className={`h-32 w-full rounded-lg border px-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none ${
+                                                !currentFieldValue.trim()
+                                                    ? 'border-red-500 bg-red-900/20 focus:border-red-400'
+                                                    : 'border-gray-600 bg-gray-700/50 focus:border-blue-500'
+                                            }`}
+                                            maxLength={currentStepData.maxLength}
                                         />
-                                    </div>
-                                    <div>
-                                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Address <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.address}
-                                            onChange={(e) => handleInputChange('address', e.target.value)}
-                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">GitHub</label>
-                                        <input
-                                            type="url"
-                                            value={formData.github}
-                                            onChange={(e) => handleInputChange('github', e.target.value)}
-                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">LinkedIn</label>
-                                        <input
-                                            type="url"
-                                            value={formData.linkedin}
-                                            onChange={(e) => handleInputChange('linkedin', e.target.value)}
-                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Summary */}
-                            <div className="rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
-                                <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Summary of Qualification</h2>
-                                <textarea
-                                    value={formData.summaryOfQualification}
-                                    onChange={(e) => handleInputChange('summaryOfQualification', e.target.value)}
-                                    rows={4}
-                                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                    placeholder="List your skills and abilities that can contribute to the company. AI will enhance this with stronger language and better keywords."
-                                />
-                            </div>
+                                        {!currentFieldValue.trim() && (
+                                            <div className="mt-2 text-sm text-red-400">This field is required to continue.</div>
+                                        )}
 
-                            {/* Education */}
-                            <div className="rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
-                                <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Education</h2>
-                                {education.map((edu, index) => (
-                                    <div key={index} className="mb-4 rounded-md bg-white p-4 dark:bg-gray-800">
-                                        <h3 className="mb-3 font-medium text-gray-900 dark:text-gray-100">{edu.level}</h3>
-                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                                            <input
-                                                type="text"
-                                                placeholder="School Name"
-                                                value={edu.schoolName}
-                                                onChange={(e) => handleEducationChange(index, 'schoolName', e.target.value)}
-                                                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                            />
-                                            <input
-                                                type="text"
-                                                placeholder="Achievement/Degree"
-                                                value={edu.achievement}
-                                                onChange={(e) => handleEducationChange(index, 'achievement', e.target.value)}
-                                                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                            />
-                                            <input
-                                                type="text"
-                                                placeholder="School Year"
-                                                value={edu.schoolYear}
-                                                onChange={(e) => handleEducationChange(index, 'schoolYear', e.target.value)}
-                                                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                        {/* Navigation Buttons */}
+                                        <div className="mt-6 flex justify-between">
+                                            <button
+                                                onClick={handlePrevious}
+                                                disabled={currentStep === 1}
+                                                className="rounded-lg bg-gray-600 px-6 py-3 font-bold text-white transition-colors hover:bg-gray-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-500"
+                                            >
+                                                Previous
+                                            </button>
 
-                            {/* Technical Skills */}
-                            <div className="rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
-                                <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
-                                    Technical Skills <span className="text-red-500">*</span>
-                                </h2>
-                                <textarea
-                                    value={formData.technicalSkills}
-                                    onChange={(e) => handleInputChange('technicalSkills', e.target.value)}
-                                    rows={3}
-                                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                    placeholder="List your technical skills (programming languages, frameworks, tools, etc.)"
-                                    required
-                                />
-                            </div>
-
-                            {/* Related Experience */}
-                            <div className="rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
-                                <div className="mb-4 flex items-center justify-between">
-                                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Related Experience</h2>
-                                    <button
-                                        type="button"
-                                        onClick={addExperience}
-                                        className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                                    >
-                                        Add Experience
-                                    </button>
-                                </div>
-                                {experiences.map((exp, index) => (
-                                    <div key={index} className="mb-4 rounded-md bg-white p-4 dark:bg-gray-800">
-                                        <div className="mb-3 flex items-center justify-between">
-                                            <h3 className="font-medium text-gray-900 dark:text-gray-100">Experience {index + 1}</h3>
-                                            {experiences.length > 1 && (
+                                            {currentStep < 7 ? (
                                                 <button
-                                                    type="button"
-                                                    onClick={() => removeExperience(index)}
-                                                    className="text-red-500 hover:text-red-700"
+                                                    onClick={handleNext}
+                                                    disabled={!currentFieldValue.trim()}
+                                                    className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 font-bold text-white transition-all duration-200 hover:from-blue-700 hover:to-purple-700 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600"
                                                 >
-                                                    Remove
+                                                    Next
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={handleGenerateResume}
+                                                    disabled={isGenerating || !allFieldsFilled}
+                                                    className="transform rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-3 font-bold text-white transition-all duration-200 hover:scale-105 hover:from-green-700 hover:to-emerald-700 disabled:scale-100 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600"
+                                                >
+                                                    {isGenerating
+                                                        ? 'Generating with AI...'
+                                                        : !allFieldsFilled
+                                                          ? 'Fill all fields first'
+                                                          : 'Generate AI Resume'}
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                                            <input
-                                                type="text"
-                                                placeholder="Company Name"
-                                                value={exp.companyName}
-                                                onChange={(e) => handleExperienceChange(index, 'companyName', e.target.value)}
-                                                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                            />
-                                            <input
-                                                type="text"
-                                                placeholder="Role/What you did"
-                                                value={exp.role}
-                                                onChange={(e) => handleExperienceChange(index, 'role', e.target.value)}
-                                                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                            />
-                                            <input
-                                                type="text"
-                                                placeholder="Year"
-                                                value={exp.year}
-                                                onChange={(e) => handleExperienceChange(index, 'year', e.target.value)}
-                                                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                            />
+                                    </div>
+                                )}
+
+                                {/* Step Overview */}
+                                <div className="mt-8 grid grid-cols-7 gap-2">
+                                    {steps.map((step) => {
+                                        const stepValue = formData[step.field as keyof typeof formData] || '';
+                                        const isCompleted = stepValue.trim().length > 0;
+
+                                        return (
+                                            <div
+                                                key={step.step}
+                                                className={`rounded-lg p-3 text-center text-xs transition-all ${
+                                                    step.step === currentStep
+                                                        ? 'bg-blue-600 text-white'
+                                                        : isCompleted
+                                                          ? 'bg-green-600 text-white'
+                                                          : 'bg-gray-700 text-gray-400'
+                                                }`}
+                                            >
+                                                <div className="font-bold">{isCompleted && step.step !== currentStep ? '✓' : step.step}</div>
+                                                <div className="mt-1 truncate">{step.title}</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Jump to Step Buttons */}
+                                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                                    {steps.map((step) => (
+                                        <button
+                                            key={step.step}
+                                            onClick={() => setCurrentStep(step.step)}
+                                            className={`rounded px-3 py-1 text-sm transition-colors ${
+                                                step.step === currentStep ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                            }`}
+                                        >
+                                            {step.step}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right Column - Live Preview */}
+                            <div className="rounded-xl border border-green-500/20 bg-gray-800/50 p-6 backdrop-blur-sm">
+                                <h2 className="mb-4 text-xl font-bold text-white">📄 Live Resume Preview</h2>
+
+                                <div className="max-h-96 space-y-4 overflow-y-auto text-sm">
+                                    {/* Personal Information Preview */}
+                                    {formData.personalInformation && (
+                                        <div className="rounded-lg bg-gray-700/50 p-4">
+                                            <h3 className="mb-2 font-bold text-blue-300">Personal Information</h3>
+                                            <div className="whitespace-pre-wrap text-gray-300">{formData.personalInformation}</div>
+                                        </div>
+                                    )}
+
+                                    {/* Target Description Preview */}
+                                    {formData.targetDescription && (
+                                        <div className="rounded-lg bg-gray-700/50 p-4">
+                                            <h3 className="mb-2 font-bold text-blue-300">Target Description</h3>
+                                            <div className="whitespace-pre-wrap text-gray-300">{formData.targetDescription}</div>
+                                        </div>
+                                    )}
+
+                                    {/* Summary Preview */}
+                                    {formData.summaryOfQualifications && (
+                                        <div className="rounded-lg bg-gray-700/50 p-4">
+                                            <h3 className="mb-2 font-bold text-blue-300">Summary of Qualifications</h3>
+                                            <div className="whitespace-pre-wrap text-gray-300">{formData.summaryOfQualifications}</div>
+                                        </div>
+                                    )}
+
+                                    {/* Education Preview */}
+                                    {formData.education && (
+                                        <div className="rounded-lg bg-gray-700/50 p-4">
+                                            <h3 className="mb-2 font-bold text-blue-300">Education</h3>
+                                            <div className="whitespace-pre-wrap text-gray-300">{formData.education}</div>
+                                        </div>
+                                    )}
+
+                                    {/* Technical Skills Preview */}
+                                    {formData.technicalSkills && (
+                                        <div className="rounded-lg bg-gray-700/50 p-4">
+                                            <h3 className="mb-2 font-bold text-blue-300">Technical Skills</h3>
+                                            <div className="whitespace-pre-wrap text-gray-300">{formData.technicalSkills}</div>
+                                        </div>
+                                    )}
+
+                                    {/* Experience Preview */}
+                                    {formData.relatedExperience && (
+                                        <div className="rounded-lg bg-gray-700/50 p-4">
+                                            <h3 className="mb-2 font-bold text-blue-300">Related Experience</h3>
+                                            <div className="whitespace-pre-wrap text-gray-300">{formData.relatedExperience}</div>
+                                        </div>
+                                    )}
+
+                                    {/* Honors Preview */}
+                                    {formData.honorsAndActivities && (
+                                        <div className="rounded-lg bg-gray-700/50 p-4">
+                                            <h3 className="mb-2 font-bold text-blue-300">Honors & Activities</h3>
+                                            <div className="whitespace-pre-wrap text-gray-300">{formData.honorsAndActivities}</div>
+                                        </div>
+                                    )}
+
+                                    {/* Empty State */}
+                                    {!Object.values(formData).some((value) => value.trim()) && (
+                                        <div className="py-8 text-center text-gray-400">
+                                            <div className="mb-2 text-4xl">📝</div>
+                                            <p>Start filling out the form to see your resume preview here!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Success Modal */}
+                        {showSuccessModal && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                                <div className="mx-4 max-w-md rounded-xl border border-green-500/20 bg-gray-800 p-6 text-white shadow-2xl">
+                                    <div className="text-center">
+                                        <div className="mb-4 text-5xl">🎉</div>
+                                        <h3 className="mb-4 text-2xl font-bold text-green-400">Success!</h3>
+                                        <p className="mb-4 text-gray-300">We successfully generated your AI-powered resume!</p>
+                                        <div className="mb-6 rounded-lg border border-green-500/20 bg-green-900/20 p-4">
+                                            <div className="font-semibold text-green-400">ATS Score: {atsScore}%</div>
+                                            <div className="mt-1 text-sm text-gray-400">Your resume is optimized for Applicant Tracking Systems</div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={handleDownloadResume}
+                                                className="flex-1 rounded-lg bg-green-600 px-4 py-3 font-bold text-white transition-colors hover:bg-green-700"
+                                            >
+                                                📥 Download PDF
+                                            </button>
+                                            <button
+                                                onClick={() => setShowSuccessModal(false)}
+                                                className="flex-1 rounded-lg bg-gray-600 px-4 py-3 font-bold text-white transition-colors hover:bg-gray-500"
+                                            >
+                                                Close
+                                            </button>
                                         </div>
                                     </div>
-                                ))}
+                                </div>
                             </div>
+                        )}
 
-                            {/* Honor and Activities */}
-                            <div className="rounded-lg bg-gray-50 p-6 dark:bg-gray-700">
-                                <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Honor and Extracurricular Activities</h2>
-                                <textarea
-                                    value={formData.honorAndActivities}
-                                    onChange={(e) => handleInputChange('honorAndActivities', e.target.value)}
-                                    rows={3}
-                                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                                    placeholder="List your honors, awards, certifications, and extracurricular activities"
-                                />
+                        {/* Welcome Modal */}
+                        {showModal && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                                <div className="mx-4 max-w-md rounded-xl bg-gray-800 p-6 text-white shadow-2xl">
+                                    <h3 className="mb-4 text-xl font-bold">Welcome! 👋</h3>
+                                    <p className="mb-4 text-gray-300">
+                                        Reminder: I'm not storing your information in the database and in fact, this is open source! You can visit the
+                                        source code here:
+                                        <a
+                                            href="https://github.com/PrinceSanguan/BIO_DATA_SAAS"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ml-1 text-blue-400 underline hover:text-blue-300"
+                                        >
+                                            https://github.com/PrinceSanguan
+                                        </a>
+                                    </p>
+                                    <button
+                                        onClick={handleCloseModal}
+                                        className="w-full rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700"
+                                    >
+                                        Got it!
+                                    </button>
+                                </div>
                             </div>
-
-                            {/* Submit Button */}
-                            <div className="pt-6 text-center">
-                                <button
-                                    type="button"
-                                    onClick={handleSubmit}
-                                    disabled={isGenerating}
-                                    className={`transform rounded-lg px-8 py-3 font-semibold text-white shadow-lg transition-all duration-200 ${
-                                        isGenerating
-                                            ? 'cursor-not-allowed bg-gray-400'
-                                            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105 hover:from-blue-700 hover:to-purple-700'
-                                    }`}
-                                >
-                                    {isGenerating ? (
-                                        <div className="flex items-center space-x-2">
-                                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                                            <>
-                                                <span>Generating AI Resume...</span>
-                                            </>
-                                        </div>
-                                    ) : (
-                                        'Generate My AI-Optimized Resume'
-                                    )}
-                                </button>
-                            </div>
-                        </form>
+                        )}
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </>
     );
 }

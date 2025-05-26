@@ -8,14 +8,10 @@ import { useEffect, useRef, useState } from 'react';
 // Video Modal Component
 const VideoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const modalRef = useRef(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
         if (isOpen && modalRef.current) {
             gsap.fromTo(modalRef.current, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'power2.out' });
-            if (videoRef.current) {
-                videoRef.current.play();
-            }
         }
     }, [isOpen]);
 
@@ -28,10 +24,14 @@ const VideoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
                     <X className="h-8 w-8" />
                 </button>
                 <div className="relative aspect-video overflow-hidden rounded-lg">
-                    <video ref={videoRef} className="h-full w-full object-cover" controls autoPlay>
-                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
-                        Your browser does not support the video tag.
-                    </video>
+                    <iframe
+                        className="h-full w-full"
+                        src="https://www.youtube.com/embed/OtTLiKz3UU4?autoplay=1&controls=1&showinfo=1&rel=0"
+                        title="BIODATA Demo"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    ></iframe>
                 </div>
             </div>
         </div>
@@ -120,7 +120,7 @@ export default function Welcome() {
 
             <Navbar />
 
-            <div ref={heroRef} className="relative min-h-screen overflow-hidden bg-gradient-to-b from-gray-900 via-blue-950 to-gray-900 pt-16 pb-16">
+            <div ref={heroRef} className="relative min-h-screen overflow-hidden bg-gradient-to-b from-gray-900 via-blue-950 to-gray-900 pt-20 pb-8">
                 <div className="pointer-events-none absolute inset-0 overflow-hidden">
                     {/* Resume background pattern */}
                     <div className="absolute inset-0 opacity-5">
@@ -233,15 +233,15 @@ export default function Welcome() {
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMDIwMjAiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTAgMGg2MHY2MEgweiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
                 </div>
 
-                <div className="relative container mx-auto px-4 py-8 md:py-20">
-                    <div className="flex flex-col items-center justify-center gap-8">
+                <div className="relative container mx-auto px-4 py-4 md:py-8">
+                    <div className="flex flex-col items-center justify-center gap-4 md:gap-6">
                         <div ref={heroContentRef} className="w-full text-center">
-                            <h1 className="mb-8 bg-gradient-to-r from-white via-blue-300 to-purple-300 bg-clip-text text-4xl leading-tight font-bold text-transparent md:text-5xl lg:text-6xl">
+                            <h1 className="mb-6 bg-gradient-to-r from-white via-blue-300 to-purple-300 bg-clip-text text-3xl leading-tight font-bold text-transparent md:text-4xl lg:text-5xl">
                                 Build Your Perfect Resume with <span className="text-blue-400">AI Magic!</span>
                             </h1>
                         </div>
 
-                        <div ref={heroVideoRef} className="relative z-20 mx-auto w-full max-w-2xl">
+                        <div ref={heroVideoRef} className="relative z-20 mx-auto w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl">
                             <div
                                 className="group relative cursor-pointer overflow-hidden rounded-xl border border-blue-500/20 bg-gray-900/50 shadow-2xl shadow-blue-500/10 backdrop-blur-sm"
                                 onClick={() => setShowVideoModal(true)}
@@ -250,10 +250,14 @@ export default function Welcome() {
                                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5"></div>
 
                                 <div className="relative aspect-video">
-                                    <video className="h-full w-full rounded-xl object-cover" autoPlay muted loop playsInline>
-                                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
-                                        Your browser does not support the video tag.
-                                    </video>
+                                    <iframe
+                                        className="h-full w-full rounded-xl"
+                                        src="https://www.youtube.com/embed/OtTLiKz3UU4?autoplay=1&mute=1&loop=1&playlist=OtTLiKz3UU4&controls=0&showinfo=0&rel=0&modestbranding=1"
+                                        title="BIODATA Demo"
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    ></iframe>
 
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                         <div className="rounded-full bg-blue-500/80 p-4">
