@@ -58,7 +58,7 @@ class UserDashboardController extends Controller
         try {
             // Generate filename from user's name
             $userName = $optimizedData['formData']['name'] ?? 'resume';
-            $filename = strtolower(str_replace(' ', '', $userName)) . '-resume.pdf';
+            $filename = preg_replace('/[^a-zA-Z0-9\-_]/', '', strtolower(str_replace(' ', '-', $userName))) . '-resume.pdf';
 
             $pdf = Pdf::loadView("pdf.resume-{$template}", compact('optimizedData'))
                 ->setPaper('a4', 'portrait');
