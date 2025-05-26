@@ -32,8 +32,6 @@ Route::middleware('throttle:20,1')->group(function () {
     |------------------------------------------
     */
   Route::get('/', [HomeController::class, 'index'])->name('home');
-  Route::get('/download-resume', [HomeController::class, 'downloadResume'])->name('download.resume');
-
   /*
     |------------------------------------------
     | Authentication - Login/Logout
@@ -80,7 +78,7 @@ Route::middleware('throttle:20,1')->group(function () {
   Route::middleware([UserMiddleware::class])->group(function () {
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
     Route::post('/dashboard/generate-resume', [UserDashboardController::class, 'generateResume'])->name('generate.resume');
-    Route::post('/dashboard/download-resume', [UserDashboardController::class, 'downloadOptimizedResume'])->name('download.resume');
+    Route::post('/dashboard/download-resume', [UserDashboardController::class, 'downloadOptimizedResume'])->name('download.optimized.resume');
 
     Route::get('/user/settings', [UserSettingsController::class, 'index'])->name('user.settings');
     Route::put('/user/settings/profile', [UserSettingsController::class, 'updateProfile'])->name('user.settings.updateProfile');
