@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Browsershot\Browsershot;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\GeminiResumeService;
 
 class UserDashboardController extends Controller
@@ -56,20 +56,14 @@ class UserDashboardController extends Controller
         $template = $request->input('template', 'it');
 
         try {
-            $html = view("pdf.resume-{$template}", compact('optimizedData'))->render();
-
             // Generate filename from user's name
             $userName = $optimizedData['formData']['name'] ?? 'resume';
             $filename = strtolower(str_replace(' ', '', $userName)) . '-resume.pdf';
 
-            $pdf = Browsershot::html($html)
-                ->format('A4')
-                ->margins(10, 10, 10, 10)
-                ->pdf();
+            $pdf = Pdf::loadView("pdf.resume-{$template}", compact('optimizedData'))
+                ->setPaper('a4', 'portrait');
 
-            return response($pdf)
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+            return $pdf->download($filename);
         } catch (\Exception $e) {
             \Log::error('PDF generation failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => 'Failed to generate PDF'], 500);
