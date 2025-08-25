@@ -116,7 +116,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="BIODATA - AI Resume Builder" />
+            <Head title="BIODATA - AI Resume Builder." />
 
             <Navbar />
 
